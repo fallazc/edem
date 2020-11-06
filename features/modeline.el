@@ -25,7 +25,7 @@
 (defvar-local edem-modeline--time "MJJ")
 (defun edem-modeline-update-time ()
   "Update "
-  (setq edem-modeline--time (format "  %s " (current-time-string))))
+  (setq edem-modeline--time(format "  %s " (current-time-string))))
 
 ;; add my custom hook
 ;;(defvar bw-after-custom-load-hook nil
@@ -43,7 +43,7 @@
 ;;(add-hook 'pdf-view-change-page-hook #'edem-modeline-update-time)
 
 (doom-modeline-def-segment edem-time
-  "Display "
+"Display "
   (propertize edem-modeline--time
               'face (if (doom-modeline--active) 'mode-line 'mode-line-inactive)))
 
@@ -53,7 +53,6 @@
 
 ;;;###autoload
 (defun doom-modeline-set-edem-modeline ()
-  "Set pdf mode-line."
   ;;(run-with-timer 1 nil #'edem-modeline-update-time)
   (doom-modeline-set-modeline 'edem))
 
