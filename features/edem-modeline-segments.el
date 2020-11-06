@@ -48,8 +48,11 @@
 (defvar-local edem-modeline--cpu-temp "")
 (defun edem-modeline-update-cpu-temp ()
   (when (doom-modeline--active)
-      (setq edem-modeline--cpu-temp "  cpu-temp" )
-      (force-mode-line-update)))
+    (with-temp-buffer
+      (insert-file-contents "/sys/class/hwmon/hwmon0/temp1_input")
+      (let ((cpu-temp (/ (string-to-number (buffer-string)) 1000)))
+        (setq edem-modeline--cpu-temp (format " %d °" cpu-temp))))
+    (force-mode-line-update)))
 
 (doom-modeline-def-segment edem-cpu-temp
   (concat
