@@ -60,16 +60,38 @@
    (propertize edem-modeline--cpu-temp
                'face (if (doom-modeline--active) 'mode-line 'mode-line-inactive))))
 
-(defvar-local edem-modeline--cpu-load "")
-(defun edem-modeline-update-cpu-load ()
-  (when (doom-modeline--active)
-      (setq edem-modeline--cpu-load "  cpu-load" )
-      (force-mode-line-update)))
+(defvar-local edem-modeline--cpu-usage "")
+(defvar-local edem-modeline--cpu-old-usage "")
+(defvar-local edem-modeline--cpu-new-usage "")
+(defvar-local edem--read-n-cpus 4)
 
-(doom-modeline-def-segment edem-cpu-load
+(defun edem--read-cpu-usages ()
+  (let ((cpu-usages (make-vector edem--read-n-cpus nil)))
+    (with-temp-buffer
+      (insert-file-contents "/proc/stat")
+      (forward-line 1)
+      (dotimes (i edem--read-n-cpus)
+        (setf (aref cpu-usages i) (buffer-substring-no-properties
+                                   (line-beginning-position)
+                                   (line-end-position)))
+        (forward-line 1)))
+    cpu-usages))
+
+(defun edem-modeline-update-cpu-usage (&optional new-usage)
+  (when (doom-modeline--active)
+    (if new-usage
+        (progn
+          (setq edem-modeline--cpu-new-usage (edem--read-cpu-usage))
+          (setq edem-modeline--cpu-usage " cpu-usage")
+          (force-mode-line-update))
+      (progn
+        (setq edem-modeline--cpu-old-usage (edem--read-cpu-usage))
+        (run-with-timer 1 nil #'edem-modeline-cpu-usage t)))))
+
+(doom-modeline-def-segment edem-cpu-usage
   (concat
    (doom-modeline-spc)
-   (propertize edem-modeline--cpu-load
+   (propertize edem-modeline--cpu-usage
                'face (if (doom-modeline--active) 'mode-line 'mode-line-inactive))))
 
 (defvar-local edem-modeline--audio "")
