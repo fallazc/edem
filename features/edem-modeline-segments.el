@@ -60,38 +60,73 @@
    (propertize edem-modeline--cpu-temp
                'face (if (doom-modeline--active) 'mode-line 'mode-line-inactive))))
 
-(defvar-local edem-modeline--cpu-usage "")
-(defvar-local edem-modeline--cpu-old-usage "")
-(defvar-local edem-modeline--cpu-new-usage "")
-(defvar-local edem--read-n-cpus 4)
+(defvar-local edem-modeline--cpu-usages "")
+(defvar-local edem-modeline--cpu-old-stat nil)
+(defvar-local edem-modeline--cpu-new-stat nil)
+(defvar edem-read-n-cpus 4
+  "Number of CPU in the system.")
+(defvar edem-read-n-cpus 4
+  "Number of CPU in the system.")
 
 (defun edem--read-cpu-usages ()
-  (let ((cpu-usages (make-vector edem--read-n-cpus nil)))
+  (let ((cpu-usages (make-vector (* edem-read-n-cpus 4) 0)))
     (with-temp-buffer
       (insert-file-contents "/proc/stat")
       (forward-line 1)
-      (dotimes (i edem--read-n-cpus)
-        (setf (aref cpu-usages i) (buffer-substring-no-properties
-                                   (line-beginning-position)
-                                   (line-end-position)))
+      (dotimes (i edem-read-n-cpus)
+        (let ((stat-columns (split-string (buffer-substring-no-properties
+                                           (line-beginning-position)
+                                           (line-end-position))
+                                          " "))
+              (offset (* i edem-read-n-cpus)))
+          ;;1 = user; 2 = nice; 3 = system; 4 = idle
+          (dotimes (j 4)
+            (let ((new-value (string-to-number (elt stat-columns (+ j 1)))))
+            (aset cpu-usages (+ offset j) new-value)))
         (forward-line 1)))
-    cpu-usages))
+    cpu-usages)))
 
-(defun edem-modeline-update-cpu-usage (&optional new-usage)
+(defsubst edem--compute-cpu-usages ()
+  "Compute the cpu usage using values from /proc/stat."
+  (let ((sum-old-stat (make-vector edem-read-n-cpus 0))
+        (sum-new-stat (make-vector edem-read-n-cpus 0)))
+    (dotimes (i edem-read-n-cpus)
+      (dotimes (j 4)
+        (let ((offset (+ (* i edem-read-n-cpus) j)))
+          (let ((old-tmp (elt edem-modeline--cpu-old-stat offset))
+                (new-tmp (elt edem-modeline--cpu-new-stat offset)))
+            (aset sum-old-stat i (+ (elt sum-old-stat i) old-tmp))
+            (aset sum-new-stat i (+ (elt sum-new-stat i) new-tmp))))))
+    (let ((cpu-usages (make-vector edem-read-n-cpus 0.0)))
+      (dotimes (i edem-read-n-cpus)
+        (let ((delta-usage (- (elt sum-new-stat i) (elt sum-old-stat i)))
+              (idle-index (+ (* i 4) 3)))
+          (aset cpu-usages i (* 100 (/ (+ (- delta-usage
+                                             (elt edem-modeline--cpu-new-stat idle-index))
+                                          (elt edem-modeline--cpu-old-stat idle-index))
+                                       (float delta-usage))))))
+      cpu-usages)))
+
+(defun edem-modeline-update-cpu-usage (&optional new-usages)
+  "You should never call this function manually.
+NEW-USAGES will be true when called from the timer function."
   (when (doom-modeline--active)
-    (if new-usage
+    (if new-usages
         (progn
-          (setq edem-modeline--cpu-new-usage (edem--read-cpu-usage))
-          (setq edem-modeline--cpu-usage " cpu-usage")
+          (setq edem-modeline--cpu-new-stat (edem--read-cpu-usages))
+          (let ((cpu-usages (edem--compute-cpu-usages)))
+            (setq edem-modeline--cpu-usages (format "%s" cpu-usages)))
+          ;;(print edem-modeline--cpu-usages)
           (force-mode-line-update))
       (progn
-        (setq edem-modeline--cpu-old-usage (edem--read-cpu-usage))
-        (run-with-timer 1 nil #'edem-modeline-cpu-usage t)))))
+        (setq edem-modeline--cpu-old-stat (edem--read-cpu-usages))
+        (print edem-modeline--cpu-old-stat)
+        (run-with-timer 2 nil #'edem-modeline-update-cpu-usage t)))))
 
 (doom-modeline-def-segment edem-cpu-usage
   (concat
    (doom-modeline-spc)
-   (propertize edem-modeline--cpu-usage
+   (propertize edem-modeline--cpu-usages
                'face (if (doom-modeline--active) 'mode-line 'mode-line-inactive))))
 
 (defvar-local edem-modeline--audio "")
@@ -121,7 +156,7 @@
 (defvar-local edem-modeline--bluetooth "")
 (defun edem-modeline-update-bluetooth ()
   (when (doom-modeline--active)
-      (setq edem-modeline--wifi "  bluetooth" )
+      (setq edem-modeline--bluetooth "  bluetooth" )
       (force-mode-line-update)))
 
 (doom-modeline-def-segment edem-bluetooth
