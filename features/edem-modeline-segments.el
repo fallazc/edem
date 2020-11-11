@@ -48,10 +48,11 @@
 (defvar-local edem-modeline--cpu-temp "")
 (defun edem-modeline-update-cpu-temp ()
   (when (doom-modeline--active)
-    (with-temp-buffer
-      (insert-file-contents "/sys/class/hwmon/hwmon0/temp1_input")
-      (let ((cpu-temp (/ (string-to-number (buffer-string)) 1000)))
-        (setq edem-modeline--cpu-temp (format " %d °" cpu-temp))))
+    (let ((cpu-temp))
+      (with-temp-buffer
+        (insert-file-contents "/sys/class/hwmon/hwmon0/temp1_input")
+        (setq cpu-temp (/ (string-to-number (buffer-string)) 1000)))
+      (setq edem-modeline--cpu-temp (format " %s °" cpu-temp)))
     (force-mode-line-update)))
 
 (doom-modeline-def-segment edem-cpu-temp
@@ -65,8 +66,10 @@
 (defvar-local edem-modeline--cpu-new-stat nil)
 (defvar edem-read-n-cpus 4
   "Number of CPU in the system.")
-(defvar edem-read-n-cpus 4
-  "Number of CPU in the system.")
+(defvar edem-modeline-cpu-usages-upade-delay 2
+  "Number of seconds between refreshing cpu usages.")
+(defvar edem-modeline--cpu-usages-upade-timer nil
+  "Timer used to schedule the cpu usages update function.")
 
 (defun edem--read-cpu-usages ()
   (let ((cpu-usages (make-vector (* edem-read-n-cpus 4) 0)))
@@ -116,12 +119,12 @@ NEW-USAGES will be true when called from the timer function."
           (setq edem-modeline--cpu-new-stat (edem--read-cpu-usages))
           (let ((cpu-usages (edem--compute-cpu-usages)))
             (setq edem-modeline--cpu-usages (format "%s" cpu-usages)))
-          ;;(print edem-modeline--cpu-usages)
           (force-mode-line-update))
       (progn
         (setq edem-modeline--cpu-old-stat (edem--read-cpu-usages))
         (print edem-modeline--cpu-old-stat)
-        (run-with-timer 2 nil #'edem-modeline-update-cpu-usage t)))))
+        (setq edem-modeline--cpu-usages-upade-timer
+              (run-with-timer edem-modeline-cpu-usages-upade-delay nil #'edem-modeline-update-cpu-usage t))))))
 
 (doom-modeline-def-segment edem-cpu-usage
   (concat
