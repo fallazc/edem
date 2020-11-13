@@ -61,6 +61,40 @@
    (propertize edem-modeline--cpu-temp
                'face (if (doom-modeline--active) 'mode-line 'mode-line-inactive))))
 
+(defvar-local edem-modeline--memory "")
+
+(defsubst edem--parse-meminfo-line (linenum)
+  (forward-line (- linenum (line-number-at-pos)))
+  (let ((line (buffer-substring-no-properties (line-beginning-position)
+                                              (line-end-position))))
+    (let ((prop-start 0)
+          (prop-end (string-match ":" line))
+          (value-start (string-match "[0-9]" line))
+          (value-end (- (length line) 3)))
+      (list (intern (substring line prop-start prop-end))
+            (substring line value-start value-end)))))
+
+(defsubst edem--get-meminfo-plist ()
+  (when (doom-modeline--active)
+    (let ((mem-usage-plist)
+          (prop-lines (vector 1 2 4 5 15 16 21 24)))
+      (with-temp-buffer
+        (insert-file-contents "/proc/meminfo")
+        (seq-doseq (i prop-lines)
+          (appendq! mem-usage-plist (edem--parse-meminfo-line i))))
+      mem-usage-plist)))
+
+(defun edem-modeline-update-memory ()
+  (when (doom-modeline--active)
+    (let ((mem-usage-plist (edem-get-meminfo-plist))))
+    (force-mode-line-update)))
+
+(doom-modeline-def-segment edem-memory
+  (concat
+   (doom-modeline-spc)
+   (propertize edem-modeline--memory
+               'face (if (doom-modeline--active) 'mode-line 'mode-line-inactive))))
+
 (defvar-local edem-modeline--cpu-usages "")
 (defvar-local edem-modeline--cpu-old-stat nil)
 (defvar-local edem-modeline--cpu-new-stat nil)
@@ -182,9 +216,8 @@ NEW-USAGES will be true when called from the timer function."
 
 (defvar-local edem-modeline--battery "")
 (defun edem-modeline-update-battery ()
-  (when (doom-modeline--active)
-      (setq edem-modeline--battery "  battery" )
-      (force-mode-line-update)))
+  "Maybe use DOOM's built-in battery?"
+  (when (doom-modeline--active)))
 
 (doom-modeline-def-segment edem-battery
   (concat
