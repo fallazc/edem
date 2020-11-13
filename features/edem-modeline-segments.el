@@ -72,7 +72,7 @@
           (value-start (string-match "[0-9]" line))
           (value-end (- (length line) 3)))
       (list (intern (substring line prop-start prop-end))
-            (substring line value-start value-end)))))
+            (string-to-number (substring line value-start value-end))))))
 
 (defsubst edem--get-meminfo-plist ()
   (when (doom-modeline--active)
@@ -84,9 +84,26 @@
           (appendq! mem-usage-plist (edem--parse-meminfo-line i))))
       mem-usage-plist)))
 
+(defsubst edem--compute-memory-usage ()
+  "Return list containing memory usage.
+Order of values is as follows:
+1 = non-cache/buffer-memory, 2 = buffers, 3 = cached-memory, 4 = swap-used
+Reference: https://stackoverflow.com/questions/41224738/how-to-calculate-system-memory-usage-from-proc-meminfo-like-htop"
+  (let* ((meminfo-plist (edem--get-meminfo-plist))
+         (total-used (- (plist-get meminfo-plist 'MemTotal)
+                        (plist-get meminfo-plist 'MemFree)))
+         (buffers (plist-get meminfo-plist 'Buffers))
+         (cached (plist-get meminfo-plist 'Cached)))
+    (let ((non-cache-buffer-memory (- total-used (+ buffers cached)))
+          (cached-mem (+ cached (- (plist-get meminfo-plist 'SReclaimable)
+                                   (plist-get meminfo-plist 'Shmem))))
+          (swap-used (- (plist-get meminfo-plist 'SwapTotal)
+                        (plist-get meminfo-plist 'SwapFree))))
+      (list non-cache-buffer-memory buffers cached-mem swap-used))))
+
 (defun edem-modeline-update-memory ()
   (when (doom-modeline--active)
-    (let ((mem-usage-plist (edem-get-meminfo-plist))))
+    (let ((memory-usage (edem--compute-memory-usage))))
     (force-mode-line-update)))
 
 (doom-modeline-def-segment edem-memory
