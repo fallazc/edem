@@ -2,7 +2,6 @@
 ;;; Commentary:
 
 ;;; Code:
-(defvar wm-process nil)
 (defvar edem-shell-cmd-prefix "edem-shell-cmd:")
 (defvar edem-shell-cmd-space "%%")
 
@@ -11,10 +10,6 @@
 
 (define-edem-shell-cmd! launch-rofi "rofi -show run")
 (define-edem-shell-cmd! launch-xterm "xterm")
-
-(defmacro edem-shell-cmd (command)
-  (let ((shell-cmd (replace-regexp-in-string " " edem-shell-cmd-space command)))
-    (concat edem-shell-cmd-prefix shell-cmd)))
 
 (map! :map edem-keymap
       "XF86AudioRaiseVolume"    #'edem-volume-up
@@ -134,41 +129,6 @@
           (setq command (format edem-emacs-cmd-fmt command)))
         (insert (concat key-cords "\n\t" command "\n\n"))))
     (write-file "~/.config/sxhkd/tmp.txt" nil)))
-
-(defun wm-process-buffer-message (message)
-  (with-current-buffer (process-buffer wm-process)
-    (insert message)))
-
-(defun wm-process-sentinel (process event)
-  (wm-process-buffer-message (format "sentinel event: %s %s" process event))
-  (cond
-   ((string-match "killed" event)
-      nil)))
-
-(defun wm-process-filter (process string)
-  (wm-process-buffer-message (format "%s" string)))
-
-(defun wm-process-status ()
-  (if wm-process
-    (process-status wm-process)
-    nil))
-
-(defun wm-process-stop ()
-  (interactive)
-  (when wm-process
-    (delete-process wm-process)))
-
-(defun wm-process-start ()
-  (interactive)
-  (when (not (eq 'run (wm-process-status)))
-    (wm-process-stop)
-    (setq wm-process (make-process
-                        :name "bspwm"
-                        :connection-type 'pipe
-                        :command '("sh" "-c" "bspc subscribe all")
-                        :buffer (get-buffer-create "*Window Manager*")
-                        :filter #'wm-process-filter
-                        :sentinel #'wm-process-sentinel))))
 
 (provide 'bspwm)
 ;;; bspwm.el ends here
