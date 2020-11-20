@@ -23,7 +23,10 @@
 (defun edem-xorg-connect (&optional display)
   "Connect to the x server with DISPLAY.
 If the DISPLAY is omitted, the one provided by the environment is used."
+
+  (edem-xorg-disconnect)
   (setq edem--connection (xcb:connect display))
+
   (if edem--connection
       ;; Initialize ICCCM/EWMH support
       (progn
