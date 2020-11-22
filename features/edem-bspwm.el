@@ -23,6 +23,14 @@
 
 (defvar edem-bspwm-process nil)
 
+(defun edem-bspwm-config (setting value &optional monitor-sel desktop-sel node-sel)
+  "See BSPWM manuel for SETTING, VALUE, MONITOR-SEL, DESKTOP-SEL and NODE-SEL."
+  (concat "bspc "
+          (and monitor-sel (not (string-empty-p monitor-sel)) "-m ")
+          (and desktop-sel (not (string-empty-p desktop-sel)) "-d ")
+          (and node-sel (not (string-empty-p node-sel)) "-n ")
+          setting " " value))
+
 (defun edem-bspwm-process-buffer-message (message)
   (with-current-buffer (process-buffer edem-bspwm-process)
     (insert message)))
