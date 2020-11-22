@@ -19,6 +19,8 @@
 ;;
 ;;; Code:
 
+(require 'edem-core)
+
 (defvar edem-bspwm-process nil)
 
 (defun edem-bspwm-process-buffer-message (message)
@@ -46,13 +48,9 @@
 (defun edem-bspwm-process-start ()
   (when (not (eq 'run (edem-bspwm-process-status)))
     (edem-bspwm-process-stop)
-    (setq edem-bspwm-process (make-process
-                        :name "bspwm"
-                        :connection-type 'pipe
-                        :command '("sh" "-c" "bspc subscribe all")
-                        :buffer (get-buffer-create "*Window Manager*")
-                        :filter #'edem-bspwm-process-filter
-                        :sentinel #'edem-bspwm-process-sentinel))))
+    (setq edem-bspwm-process (edem-shell-cmd-run "bspc subscribe all"
+                                                 #'edem-bspwm-process-filter
+                                                 #'edem-bspwm-process-sentinel))))
 
 (provide 'edem-bspwm)
 ;;; edem-bspwm.el ends here
