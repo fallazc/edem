@@ -44,24 +44,38 @@
     (let ((fn (elt process-info 2)))
       (when (functionp fn) (funcall fn string)))))
 
-(defun edem-shell-cmd-run (command &optional output-handler finished-handler)
+(defsubst edem-shell-cmd-run (command &optional output-handler finished-handler)
   "Asynchronously run user's COMMAND.
-OUTPUT-HANDLER function that handle the command's output.
-FINISHED-HANDLER function that handle the command's output"
+OUTPUT-HANDLER function that handles the command's output.
+FINISHED-HANDLER function that handles the command's output"
+  (process (make-process
+            :name command
+            :connection-type 'pipe
+            :command `("sh" "-c" ,command)
+            :buffer (get-buffer-create "*Edem Shell*")
+            :filter (or output-handler #'edem--shell-cmd-process-filter)
+            :sentinel (or  finished-handler #'edem--shell-cmd-process-sentinel))))
+
+(defun edem-shell-cmd-run-batch (command-list &optional output-handler finished-handler)
+  "Same as edem-shell-cmd-run but preserves order of execution.
+COMMAND-LIST list of strings.
+OUTPUT-HANDLER function that handles the command's output.
+FINISHED-HANDLER function that handles the command's output."
+  (when (> 0 (length command-list))
+    (let ((batch-cmd "true"))
+      (dolist (cmd command-list)
+        (setq batch-cmd (concat batch-cmd ";" cmd)))
+      (edem-shell-cmd-run batch-cmd output-handler finished-handler))))
+
+(defun edem-shell-cmd-run-unique (command &optional output-handler finished-handler)
+  "Same as edem-shell-cmd-run but allow one COMMAND.
+OUTPUT-HANDLER function that handles the command's output.
+FINISHED-HANDLER function that handles the command's output"
   (when (not (seq-find #'(lambda (item) (string-equal command (elt item 1)))
                         edem-running-processes-info))
-    (let* ((process (make-process
-                     :name command
-                     :connection-type 'pipe
-                     :command `("sh" "-c" ,command)
-                     :buffer (get-buffer-create "*Edem Shell*")
-                     :filter #'edem--shell-cmd-process-filter
-                     :sentinel #'edem--shell-cmd-process-sentinel)))
+    (let ((process (edem-shell-cmd-run command)))
       (appendq! edem-running-processes-info
-                `((,(process-id process)
-                   ,command
-                   ,output-handler
-                   ,finished-handler))))))
+                `((,(process-id process) ,command ,output-handler ,finished-handler))))))
 
 (defmacro define-edem-shell-cmd! (name command &rest args)
   "Helper to define shell command as functions.
