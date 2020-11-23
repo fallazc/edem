@@ -25,7 +25,7 @@
 
 (defun edem-bspwm-config (setting value &optional monitor-sel desktop-sel node-sel)
   "See BSPWM manuel for SETTING, VALUE, MONITOR-SEL, DESKTOP-SEL and NODE-SEL."
-  (concat "bspc "
+  (concat "bspc config"
           (and monitor-sel (not (string-empty-p monitor-sel)) "-m ")
           (and desktop-sel (not (string-empty-p desktop-sel)) "-d ")
           (and node-sel (not (string-empty-p node-sel)) "-n ")
