@@ -35,6 +35,13 @@
   "See BSPWM manual."
   "bspc rule -l")
 
+(defun edem-bspwm-rule-remove (window-name nth-head-or-tail)
+  "See BSPWM manual for more info on NTH-HEAD-OR-TAIL.
+WINDOW-NAME string in the format (<class_name>|*)[:(<instance_name>|*)]"
+  (concat "bspc rule -r "
+          nth-head-or-tail " '"
+          window-name "'"))
+
 (defun edem-bspwm-rule-add (window-name one-shot &rest args)
   "See BSPWM manual for more info.
 WINDOW-NAME string in the format (<class_name>|*)[:(<instance_name>|*)]
