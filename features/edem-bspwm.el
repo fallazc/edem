@@ -31,11 +31,15 @@
           (and node-sel (not (string-empty-p node-sel)) "-n ")
           setting " " value))
 
+(defun edem-bspwm-rule-list ()
+  "See BSPWM manual."
+  "bspc rule -l")
+
 (defun edem-bspwm-rule-add (window-name one-shot &rest args)
   "See BSPWM manual for more info.
 WINDOW-NAME string in the format (<class_name>|*)[:(<instance_name>|*)]
 ONE-SHOT
-ARGS is an alist where CAR is the property name and CDR its value."
+ARGS is a list holding an alist where CAR=property name and CDR=value."
   (let ((rules ""))
     (dolist (item args)
       (setq rules (concat rules (concat (car item) "=" (cdr item) " "))))
