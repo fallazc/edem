@@ -24,12 +24,22 @@
 (defvar edem-bspwm-process nil)
 
 (defun edem-bspwm-config (setting value &optional monitor-sel desktop-sel node-sel)
-  "See BSPWM manuel for SETTING, VALUE, MONITOR-SEL, DESKTOP-SEL and NODE-SEL."
-  (concat "bspc config"
+  "See BSPWM manual for SETTING, VALUE, MONITOR-SEL, DESKTOP-SEL and NODE-SEL."
+  (concat "bspc config "
           (and monitor-sel (not (string-empty-p monitor-sel)) "-m ")
           (and desktop-sel (not (string-empty-p desktop-sel)) "-d ")
           (and node-sel (not (string-empty-p node-sel)) "-n ")
           setting " " value))
+
+(defun edem-bspwm-rule-add (window-name one-shot &rest args)
+  "See BSPWM manual for more info.
+WINDOW-NAME string in the format (<class_name>|*)[:(<instance_name>|*)]
+ONE-SHOT
+ARGS is an alist where CAR is the property name and CDR its value."
+  (let ((rules ""))
+    (dolist (item args)
+      (setq rules (concat rules (concat (car item) "=" (cdr item) " "))))
+    (concat "bspc rule -a '" window-name "' " (and one-shot "-o ") rules)))
 
 (defun edem-bspwm-process-buffer-message (message)
   (with-current-buffer (process-buffer edem-bspwm-process)
