@@ -35,21 +35,26 @@
   "See BSPWM manual."
   "bspc rule -l")
 
-(defun edem-bspwm-rule-remove (window-name nth-head-or-tail)
-  "See BSPWM manual for more info on NTH-HEAD-OR-TAIL.
+(defun edem-bspwm-rule-remove (window-name id-head-or-tail)
+  "See BSPWM manual for more info on ID-HEAD-OR-TAIL.
 WINDOW-NAME string in the format (<class_name>|*)[:(<instance_name>|*)]"
   (concat "bspc rule -r "
-          nth-head-or-tail " '"
+          id-head-or-tail " '"
           window-name "'"))
+
+(defsubst edem--alists-to-string (alists)
+  "ARGS is a list of alists where CAR=property name and CDR=value."
+  (let ((str ""))
+    (dolist (item alists)
+      (setq str (concat str (concat (car item) "=" (cdr item) " "))))
+    str))
 
 (defun edem-bspwm-rule-add (window-name one-shot &rest args)
   "See BSPWM manual for more info.
 WINDOW-NAME string in the format (<class_name>|*)[:(<instance_name>|*)]
 ONE-SHOT
-ARGS is a list holding an alist where CAR=property name and CDR=value."
-  (let ((rules ""))
-    (dolist (item args)
-      (setq rules (concat rules (concat (car item) "=" (cdr item) " "))))
+ARGS alists where CAR=property name and CDR=value."
+  (let ((rules (edem--alist-to-string args)))
     (concat "bspc rule -a '" window-name "' " (and one-shot "-o ") rules)))
 
 (defun edem-bspwm-process-buffer-message (message)
