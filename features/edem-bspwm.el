@@ -42,10 +42,10 @@ WINDOW-NAME string in the format (<class_name>|*)[:(<instance_name>|*)]"
           id-head-or-tail " '"
           window-name "'"))
 
-(defsubst edem--alists-to-string (alists)
-  "ARGS is a list of alists where CAR=property name and CDR=value."
+(defsubst edem--alists-to-string (alist)
+  "ALIST is a list of alists where CAR=property name and CDR=value."
   (let ((str ""))
-    (dolist (item alists)
+    (dolist (item alist)
       (setq str (concat str (concat (car item) "=" (cdr item) " "))))
     str))
 
