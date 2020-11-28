@@ -57,6 +57,12 @@ ARGS alists where CAR=property name and CDR=value."
   (let ((rules (edem--alist-to-string args)))
     (concat "bspc rule -a '" window-name "' " (and one-shot "-o ") rules)))
 
+(defsubst edem-bspwm-hsplit ()
+  (edem-shell-cmd-run "bspc node --presel-dir east -i"))
+
+(defsubst edem-bspwm-vsplit ()
+  (edem-shell-cmd-run "bspc node --presel-dir south -i"))
+
 (defun edem-bspwm-process-buffer-message (message)
   (with-current-buffer (process-buffer edem-bspwm-process)
     (insert message)))
